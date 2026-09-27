@@ -27,14 +27,15 @@ jobs:
           unzip -o "$zip" -d extracted_temp/ || true
         done
         
-        if [ -d "stlink-flasher/stlink-flasher" ]; then
-          cp -r stlink-flasher/stlink-flasher/* . 2>/dev/null || true
-        elif [ -d "stlink-flasher" ]; then
-          cp -r stlink-flasher/* . 2>/dev/null || true
-        fi
-        
+        # Automatically find the project root inside extracted files and copy to current root
         if [ -d "extracted_temp" ]; then
-          cp -r extracted_temp/* . 2>/dev/null || true
+          TARGET_DIR=$(find extracted_temp -name "app" -type d | head -n 1)
+          if [ -n "$TARGET_DIR" ]; then
+            PROJECT_ROOT=$(dirname "$TARGET_DIR")
+            echo "Moving files from $PROJECT_ROOT to root..."
+            cp -r "$PROJECT_ROOT"/* . 2>/dev/null || true
+            cp -r "$PROJECT_ROOT"/.* . 2>/dev/null || true
+          fi
         fi
 
     - name: Grant execute permission for gradlew
