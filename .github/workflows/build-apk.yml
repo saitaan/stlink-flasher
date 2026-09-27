@@ -1,0 +1,66 @@
+name: Build APK from ZIP
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Extract ZIP and Setup Root Directory
+      run: |
+        mkdir -p extracted_temp
+        for zip in *.zip; do
+          if [ -f "$zip" ]; then
+            echo "Extracting $zip..."
+            unzip -o "$zip" -d extracted_temp/
+          fi
+        done
+        
+        # Find where build.gradle or app folder is located inside extracted files
+        EXTRACTED_PATH=$(find extracted_temp -name "app" -type d | head -n 1)
+        if [ -n "$EXTRACTED_PATH" ]; then
+          PROJECT_ROOT=$(dirname "$EXTRACTED_PATH")
+          echo "Found project root at $PROJECT_ROOT, moving contents to root..."
+          cp -r "$PROJECT_ROOT"/* . 2>/dev/null || true
+          cp -r "$PROJECT_ROOT"/.* . 2>/dev/null || true
+        else
+          echo "No nested app folder found, checking extracted_temp directly..."
+          cp -r extracted_temp/* . 2>/dev/null || true
+        end
+
+    - name: Ensure Gradle Wrapper Exists
+      run: |
+        if [ ! -f "./gradlew" ]; then
+          echo "gradlew not found. Installing gradle and generating wrapper..."
+          sudo apt-get update && sudo apt-get install -y gradle
+          gradle wrapper --gradle-version 8.4
+        fi
+        chmod +x gradlew
+
+    - name: Build Debug APK with Gradle
+      run: ./gradlew assembleDebug --no-daemon
+
+    - name: Rename APK to Flasher
+      run: |
+        mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/flasher.apk
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: flasher
+        path: app/build/outputs/apk/debug/flasher.apk
+        
