@@ -41,14 +41,8 @@ jobs:
           cp -r extracted_temp/* . 2>/dev/null || true
         fi
 
-    - name: Ensure Gradle Wrapper Exists
-      run: |
-        if [ ! -f "./gradlew" ]; then
-          echo "gradlew not found. Installing gradle and generating wrapper..."
-          sudo apt-get update && sudo apt-get install -y gradle
-          gradle wrapper --gradle-version 8.4
-        fi
-        chmod +x gradlew
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
 
     - name: Build Debug APK with Gradle
       run: ./gradlew assembleDebug --no-daemon
