@@ -1,0 +1,55 @@
+name: Build APK from ZIP
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Auto Extract ZIP and Fix Directory
+      run: |
+        for zip in $(find . -name "*.zip"); do
+          echo "Extracting $zip..."
+          unzip -o "$zip" -d extracted_temp/ || true
+        done
+        
+        if [ -d "stlink-flasher/stlink-flasher" ]; then
+          cp -r stlink-flasher/stlink-flasher/* . 2>/dev/null || true
+        elif [ -d "stlink-flasher" ]; then
+          cp -r stlink-flasher/* . 2>/dev/null || true
+        fi
+        
+        if [ -d "extracted_temp" ]; then
+          cp -r extracted_temp/* . 2>/dev/null || true
+        fi
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build Debug APK with Gradle
+      run: ./gradlew assembleDebug
+
+    - name: Rename APK to Flasher
+      run: |
+        mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/flasher.apk
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: flasher
+        path: app/build/outputs/apk/debug/flasher.apk
+        
