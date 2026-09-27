@@ -37,19 +37,11 @@ jobs:
           fi
         fi
 
-    - name: Setup Gradle Wrapper (Fix missing gradlew)
-      run: |
-        if [ ! -f "./gradlew" ]; then
-          echo "Gradle wrapper missing, generating wrapper..."
-          sudo apt-get update && sudo apt-get install -y gradle
-          gradle wrapper --gradle-version 8.4
-        fi
-
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
     - name: Build Debug APK with Gradle
-      run: ./gradlew assembleDebug
+      run: ./gradlew assembleDebug --no-daemon
 
     - name: Rename APK to Flasher
       run: |
@@ -60,3 +52,4 @@ jobs:
       with:
         name: flasher
         path: app/build/outputs/apk/debug/flasher.apk
+        
