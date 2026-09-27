@@ -30,7 +30,6 @@ jobs:
           fi
         done
         
-        # Find where build.gradle or app folder is located inside extracted files
         EXTRACTED_PATH=$(find extracted_temp -name "app" -type d | head -n 1)
         if [ -n "$EXTRACTED_PATH" ]; then
           PROJECT_ROOT=$(dirname "$EXTRACTED_PATH")
@@ -40,7 +39,7 @@ jobs:
         else
           echo "No nested app folder found, checking extracted_temp directly..."
           cp -r extracted_temp/* . 2>/dev/null || true
-        end
+        fi
 
     - name: Ensure Gradle Wrapper Exists
       run: |
